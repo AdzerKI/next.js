@@ -125,6 +125,7 @@ import { getServerReact, getClientReact } from '../runtime-reacts.external'
 import { createPromiseWithResolvers } from '../../shared/lib/promise-with-resolvers'
 import { getTracer, type Span } from '../lib/trace/tracer'
 import { UseCacheSpan } from '../lib/trace/constants'
+import { getServerReferenceMetadata } from '../app-render/server-reference-metadata'
 
 interface PrivateCacheContext {
   readonly kind: 'private'
@@ -177,6 +178,9 @@ type UseCacheTraceReason =
   | 'dev-rewarm'
   | 'stale'
   | 'runtime-data'
+  | 'prerender-ended'
+  | 'omitted-from-shell'
+  | 'joined-pending'
 
 type UseCacheTraceResult = {
   outcome: UseCacheTraceOutcome
@@ -187,9 +191,9 @@ type UseCacheTraceResult = {
 
 type UseCacheTrace = {
   readonly span: Span
+  bypass(reason: UseCacheTraceReason): void
   complete(): void
   fail(error: unknown): void
-  ignore(): void
   resolve(result: UseCacheTraceResult): void
   setHandler(handler: 'default' | 'custom' | 'none'): void
   setJoin(join: UseCacheTraceJoin): void
@@ -210,6 +214,14 @@ function createUseCacheTrace(
 
   return {
     span,
+    bypass(reason) {
+      result = {
+        outcome: 'bypass',
+        source,
+        reason,
+      }
+      this.complete()
+    },
     complete() {
       if (finished) return
       finished = true
@@ -238,14 +250,6 @@ function createUseCacheTrace(
           ? error
           : new Error('use cache invocation threw a non-Error value')
       )
-    },
-    ignore() {
-      result = {
-        outcome: 'bypass',
-        source,
-        reason: 'runtime-data',
-      }
-      this.complete()
     },
     resolve(value) {
       result = value
@@ -1848,15 +1852,29 @@ export async function cache(
     return cacheImpl(kind, id, boundArgsLength, originalFn, args)
   }
 
+  const metadata = workStore ? getServerReferenceMetadata(id, undefined) : null
+  const candidateName = originalFn.name || metadata?.exportedName
+  const cacheName =
+    candidateName && !candidateName.startsWith('$$RSC_SERVER_CACHE_')
+      ? candidateName
+      : '<cache>'
+  const spanName = `use cache ${cacheName}`
+
   // Keep `cache` in the async stack. Errors created later in the cache state
   // machine use it to remove framework frames and preserve the user callsite.
   return await getTracer().trace(
     UseCacheSpan.execute,
     {
-      spanName: 'use cache',
+      spanName,
       attributes: {
         'next.span_category': 'application',
         'next.cache.kind': kind === 'private' ? 'private' : 'public',
+        'next.cache.name': cacheName,
+        ...(metadata?.file
+          ? {
+              'next.cache.file': metadata.file,
+            }
+          : undefined),
       },
     },
     async (span, done) => {
@@ -1874,7 +1892,7 @@ export async function cache(
         return result
       } catch (error) {
         if (isHangingPromiseRejectionError(error)) {
-          cacheTrace?.ignore()
+          cacheTrace?.bypass('runtime-data')
         } else {
           cacheTrace?.fail(error)
         }
@@ -1927,7 +1945,7 @@ async function cacheImpl(
         // We don't know if the cache itself is dynamic or runtime data,
         // but the prerender is over, so it doesn't need to participate
         // in runtime data tracking at all.
-        cacheTrace?.ignore()
+        cacheTrace?.bypass('prerender-ended')
         return makeUntrackedHangingPromise<never>(
           workUnitStore.renderSignal,
           workStore.route,
@@ -2037,7 +2055,7 @@ async function cacheImpl(
       // "use cache: private" is dynamic in prerendering contexts.
       case 'prerender':
         // Private caches can read request data, which is runtime data.
-        cacheTrace?.ignore()
+        cacheTrace?.bypass('runtime-data')
         return makeRuntimeHangingPromise(
           workUnitStore.renderSignal,
           workStore.route,
@@ -2045,7 +2063,7 @@ async function cacheImpl(
           workUnitStore
         )
       case 'prerender-legacy':
-        cacheTrace?.ignore()
+        cacheTrace?.bypass('runtime-data')
         return throwToInterruptStaticGeneration(
           expression,
           workStore,
@@ -2349,7 +2367,7 @@ async function cacheImpl(
         if (dynamicAccessAbortController.signal.aborted) {
           // The dynamic access is a fallback params read, which is runtime
           // data.
-          cacheTrace?.ignore()
+          cacheTrace?.bypass('runtime-data')
           return makeRuntimeHangingPromise(
             workUnitStore.renderSignal,
             workStore.route,
@@ -2495,7 +2513,7 @@ async function cacheImpl(
         case 'prerender-runtime':
           // The cache key was marked dynamic because it depends on fallback
           // params, which are runtime data.
-          cacheTrace?.ignore()
+          cacheTrace?.bypass('runtime-data')
           return makeRuntimeHangingPromise(
             workUnitStore.renderSignal,
             workStore.route,
@@ -2619,7 +2637,7 @@ async function cacheImpl(
               // The entry is only excluded from *static* prerenders — the
               // 'prerender-runtime' case below serves it — so a runtime
               // prefetch would include this content.
-              cacheTrace?.ignore()
+              cacheTrace?.bypass('omitted-from-shell')
               return makeRuntimeHangingPromise(
                 workUnitStore.renderSignal,
                 workStore.route,
@@ -2745,7 +2763,7 @@ async function cacheImpl(
                   // The entry was omitted only because this render ends
                   // before the post-shell stage; a render that reaches its
                   // post-shell stage would serve it.
-                  cacheTrace?.ignore()
+                  cacheTrace?.bypass('omitted-from-shell')
                   return makeStageHangingPromise(
                     prerenderStore.renderSignal,
                     workStore.route,
@@ -2755,7 +2773,7 @@ async function cacheImpl(
                 }
                 // An unprefetchable entry (stale < MIN_PREFETCHABLE_STALE) is
                 // excluded from runtime prerenders too.
-                cacheTrace?.ignore()
+                cacheTrace?.bypass('omitted-from-shell')
                 return makeDynamicHangingPromise(
                   prerenderStore.renderSignal,
                   workStore.route,
@@ -2903,7 +2921,7 @@ async function cacheImpl(
             // function, which escapes the instrumentation.
             // The cache key depends on fallback params, which are runtime
             // data.
-            cacheTrace?.ignore()
+            cacheTrace?.bypass('runtime-data')
             return makeRuntimeHangingPromise(
               workUnitStore.renderSignal,
               workStore.route,
@@ -2927,7 +2945,7 @@ async function cacheImpl(
             // know whether a runtime prerender would resolve it. Treat it as
             // runtime data, conservatively: the cost is at most a redundant
             // runtime prefetch request.
-            cacheTrace?.ignore()
+            cacheTrace?.bypass('runtime-data')
             return makeRuntimeHangingPromise(
               workUnitStore.renderSignal,
               workStore.route,
@@ -2986,7 +3004,7 @@ async function cacheImpl(
         )
         cacheSignal?.endRead()
         cacheTrace?.setJoin('intra-request')
-        cacheTrace?.ignore()
+        cacheTrace?.bypass('joined-pending')
         return sharedCacheResult.hangingPromise
       }
 
@@ -3212,7 +3230,7 @@ async function cacheImpl(
             cacheSignal?.endRead()
             resolvableSharedCacheResult.resolve(sharedCacheResult)
             cacheTrace?.setJoin('cross-request')
-            cacheTrace?.ignore()
+            cacheTrace?.bypass('joined-pending')
             return sharedCacheResult.hangingPromise
           }
         }
@@ -3359,7 +3377,7 @@ async function cacheImpl(
                 type: 'prerender-dynamic',
                 hangingPromise,
               })
-              cacheTrace?.ignore()
+              cacheTrace?.bypass('omitted-from-shell')
               return hangingPromise
             case 'request': {
               if (process.env.NODE_ENV === 'development') {
@@ -3542,7 +3560,7 @@ async function cacheImpl(
               resumeDataCache.dynamicCacheKeys.add(serializedCacheKey)
             }
             resolvableSharedCacheResult.resolve(result)
-            cacheTrace?.ignore()
+            cacheTrace?.bypass('runtime-data')
             return result.hangingPromise
           }
 
