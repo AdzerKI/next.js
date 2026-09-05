@@ -622,7 +622,7 @@ fn prefill_multi_value_database(
         family_configs: [FamilyConfig {
             name: "test",
             kind: FamilyKind::MultiValue,
-            compression: Compression::Lz4,
+            compression: Compression::Lz4.into(),
         }],
     };
     let db =
@@ -697,7 +697,7 @@ fn open_multi_value_db(path: &Path) -> TurboPersistence<SerialScheduler, 1> {
         family_configs: [FamilyConfig {
             name: "test",
             kind: FamilyKind::MultiValue,
-            compression: Compression::Lz4,
+            compression: Compression::Lz4.into(),
         }],
     };
     TurboPersistence::<SerialScheduler, 1>::open_with_config(path.to_path_buf(), db_config).unwrap()
@@ -966,7 +966,7 @@ fn bench_write_multi_value(c: &mut Criterion) {
                             family_configs: [FamilyConfig {
                                 name: "test",
                                 kind: FamilyKind::MultiValue,
-                                compression: Compression::Lz4,
+                                compression: Compression::Lz4.into(),
                             }],
                         };
                         let db = TurboPersistence::<SerialScheduler, 1>::open_with_config(
@@ -1208,7 +1208,7 @@ fn bench_static_sorted_file_lookup(c: &mut Criterion) {
                 &entries,
                 &sst_path,
                 MetaEntryFlags::FRESH,
-                Compression::Lz4,
+                Compression::Lz4.into(),
             )
             .unwrap();
 
@@ -1217,7 +1217,8 @@ fn bench_static_sorted_file_lookup(c: &mut Criterion) {
                 sequence_number: 1,
                 block_count: meta.block_count,
             };
-            let sst = StaticSortedFile::open(tempdir.path(), sst_meta, Compression::Lz4).unwrap();
+            let sst =
+                StaticSortedFile::open(tempdir.path(), sst_meta, Compression::Lz4.into()).unwrap();
 
             // Create block caches
             let key_block_cache: BlockCache = BlockCache::with(

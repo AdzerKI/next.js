@@ -17,7 +17,7 @@ use rustc_hash::FxHasher;
 use smallvec::SmallVec;
 
 use crate::{
-    Compression, QueryKey,
+    CompressionConfig, QueryKey,
     arc_bytes::ArcBytes,
     be,
     compression::checksum_block,
@@ -199,7 +199,7 @@ trait ValueBlockCache<B: SharedBytes> {
         mmap: &B::MmapHandle,
         meta: &StaticSortedFileMetaData,
         block_index: u16,
-        compression: Compression,
+        compression: CompressionConfig,
     ) -> Result<B>;
 }
 
@@ -219,7 +219,7 @@ impl ValueBlockCache<ArcBytes> for ArcBlockCacheReader<'_> {
         mmap: &Arc<Mmap>,
         meta: &StaticSortedFileMetaData,
         block_index: u16,
-        compression: Compression,
+        compression: CompressionConfig,
     ) -> Result<ArcBytes> {
         get_or_cache_block(
             mmap,
@@ -243,7 +243,7 @@ impl ValueBlockCache<RcBytes> for RcBlockCacheReader<'_> {
         mmap: &Rc<Mmap>,
         meta: &StaticSortedFileMetaData,
         block_index: u16,
-        compression: Compression,
+        compression: CompressionConfig,
     ) -> Result<RcBytes> {
         if let Some((idx, block)) = self.cache.as_ref()
             && *idx == block_index
@@ -284,7 +284,7 @@ pub struct StaticSortedFile {
     /// bitmap the CRC would be re-computed on every access. `Relaxed` ordering
     /// suffices: racing first-time verifications are idempotent.
     verified_blocks: Box<[AtomicU64]>,
-    compression: Compression,
+    compression: CompressionConfig,
 }
 
 impl StaticSortedFile {
@@ -293,7 +293,7 @@ impl StaticSortedFile {
     pub fn open(
         db_path: &Path,
         meta: StaticSortedFileMetaData,
-        compression: Compression,
+        compression: CompressionConfig,
     ) -> Result<Self> {
         let filename = format!("{:08}.sst", meta.sequence_number);
         let path = db_path.join(&filename);
@@ -591,7 +591,7 @@ fn get_or_cache_block(
     block_index: u16,
     cache: &BlockCache,
     verified_blocks: &[AtomicU64],
-    compression: Compression,
+    compression: CompressionConfig,
 ) -> Result<ArcBytes> {
     let (uncompressed_length, checksum, block_data) = get_raw_block_slice(mmap, meta, block_index)
         .with_context(|| {
@@ -758,7 +758,7 @@ fn read_block_generic<B: SharedBytes>(
     mmap: &B::MmapHandle,
     meta: &StaticSortedFileMetaData,
     block_index: u16,
-    compression: Compression,
+    compression: CompressionConfig,
 ) -> Result<B> {
     let (uncompressed_length, expected_checksum, block) =
         get_raw_block_slice(mmap, meta, block_index).with_context(|| {
@@ -792,7 +792,7 @@ fn handle_key_match_generic<B: SharedBytes>(
     ty: u8,
     val: &[u8],
     key_block: &B,
-    compression: Compression,
+    compression: CompressionConfig,
     reader: impl ValueBlockCache<B>,
 ) -> Result<LookupValue<B>> {
     Ok(match ty {
@@ -851,7 +851,7 @@ pub struct StaticSortedFileIter {
     /// value blocks sequentially and don't revisit earlier blocks, so caching
     /// just the current one avoids redundant decompression.
     value_block_cache: Option<(u16, RcBytes)>,
-    compression: Compression,
+    compression: CompressionConfig,
 }
 
 enum CurrentKeyBlockKind {
@@ -925,7 +925,7 @@ impl StaticSortedFileIter {
     pub fn open(
         db_path: &Path,
         meta: StaticSortedFileMetaData,
-        compression: Compression,
+        compression: CompressionConfig,
     ) -> Result<Self> {
         let filename = format!("{:08}.sst", meta.sequence_number);
         let path = db_path.join(&filename);
@@ -947,7 +947,7 @@ impl StaticSortedFileIter {
     fn new(
         mmap: Rc<Mmap>,
         meta: StaticSortedFileMetaData,
-        compression: Compression,
+        compression: CompressionConfig,
     ) -> Result<Self> {
         let root_block_index = meta.block_count - 1;
         let block: RcBytes = read_block_generic(&mmap, &meta, root_block_index, compression)?;
@@ -987,7 +987,7 @@ impl StaticSortedFileIter {
         mmap: &Rc<Mmap>,
         meta: &StaticSortedFileMetaData,
         block_index: u16,
-        compression: Compression,
+        compression: CompressionConfig,
     ) -> Result<CurrentKeyBlock> {
         let block: RcBytes = read_block_generic(mmap, meta, block_index, compression)?;
         let data = &*block;

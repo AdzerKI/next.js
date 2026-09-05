@@ -31,7 +31,7 @@ mod write_batch;
 mod tests;
 
 pub use arc_bytes::ArcBytes;
-pub use compression::{Compression, checksum_block};
+pub use compression::{Compression, CompressionConfig, checksum_block};
 pub use db::{
     CommitStats, CompactConfig, CurrentDbVersion, MetaFileEntryInfo, MetaFileInfo,
     TurboPersistence, read_current_version,
@@ -56,7 +56,7 @@ pub enum FamilyKind {
 pub struct FamilyConfig {
     pub name: &'static str,
     pub kind: FamilyKind,
-    pub compression: Compression,
+    pub compression: CompressionConfig,
 }
 
 /// Database-wide configuration with per-family storage settings.
@@ -74,7 +74,7 @@ impl<const FAMILIES: usize> Default for DbConfig<FAMILIES> {
             family_configs: [FamilyConfig {
                 name: "unknown",
                 kind: FamilyKind::SingleValue,
-                compression: Compression::Lz4,
+                compression: CompressionConfig::Lz4,
             }; FAMILIES],
         }
     }

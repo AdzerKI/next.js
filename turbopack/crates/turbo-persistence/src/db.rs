@@ -29,7 +29,7 @@ use tracing::span::EnteredSpan;
 
 pub use crate::compaction::selector::CompactConfig;
 use crate::{
-    Compression, DbConfig, FamilyKind, QueryKey,
+    CompressionConfig, DbConfig, FamilyKind, QueryKey,
     arc_bytes::ArcBytes,
     compaction::selector::{Compactable, get_merge_segments},
     compression::{checksum_block, decompress_into_arc},
@@ -653,7 +653,7 @@ impl<S: ParallelScheduler, const FAMILIES: usize> TurboPersistence<S, FAMILIES> 
 
     /// Reads and decompresses a blob file. This is not backed by any cache.
     #[tracing::instrument(level = "info", name = "reading database blob", skip_all)]
-    fn read_blob(&self, seq: u32, compression: Compression) -> Result<ArcBytes> {
+    fn read_blob(&self, seq: u32, compression: CompressionConfig) -> Result<ArcBytes> {
         let path = self.path.join(format!("{seq:08}.blob"));
         let file = File::open(&path)?;
         let mmap = unsafe { Mmap::map(file.file()) }.with_context(|| {
@@ -1615,7 +1615,7 @@ impl<S: ParallelScheduler, const FAMILIES: usize> TurboPersistence<S, FAMILIES> 
                                 /// used set).
                                 writer: Option<(u32, StreamingSstWriter<LookupEntry>)>,
                                 flags: MetaEntryFlags,
-                                compression: Compression,
+                                compression: CompressionConfig,
                                 new_sst_files:
                                     Vec<(u32, File, StaticSortedFileBuilderMeta<'static>)>,
                                 /// Hash of the last key added. Used to ensure we only split
@@ -1623,7 +1623,10 @@ impl<S: ParallelScheduler, const FAMILIES: usize> TurboPersistence<S, FAMILIES> 
                                 last_hash: Option<u64>,
                             }
                             impl Collector {
-                                fn new(flags: MetaEntryFlags, compression: Compression) -> Self {
+                                fn new(
+                                    flags: MetaEntryFlags,
+                                    compression: CompressionConfig,
+                                ) -> Self {
                                     Self {
                                         writer: None,
                                         flags,
