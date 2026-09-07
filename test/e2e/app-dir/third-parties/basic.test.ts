@@ -17,6 +17,24 @@ describe('@next/third-parties basic usage', () => {
     expect(youtubeContainer.length).toBe(1)
   })
 
+  it('installs @next/third-parties from the same build as next', async () => {
+    const $ = await next.render$('/version')
+    const versions = JSON.parse($('#versions').text())
+
+    // Version parity can only be enforced when both packages come from the
+    // same source: the local tarballs (dev/start) or the preview build of
+    // the tested commit (deploy). Deploy tests may also pin `next` to an
+    // arbitrary released version via NEXT_TEST_VERSION while
+    // `@next/third-parties` stays on the `canary` dist-tag.
+    const nextTestVersion = process.env.NEXT_TEST_VERSION
+    if (
+      nextTestVersion === undefined ||
+      nextTestVersion.includes('/commits/')
+    ) {
+      expect(versions.thirdParties).toBe(versions.next)
+    }
+  })
+
   it('renders GoogleMapsEmbed', async () => {
     const $ = await next.render$('/google-maps-embed')
 

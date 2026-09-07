@@ -86,6 +86,32 @@ const nextjsReactPeerVersion = "19.2.8";
 const ROOT_PACKAGE_MANAGER: string =
   require('../../../package.json').packageManager
 
+// The set of packages published for each preview build, mirroring
+// `scripts/create-preview-tarballs.js` which packs every non-private package
+// under `packages/`.
+let publicMonorepoPackageNames: Set<string> | null = null
+async function getPublicMonorepoPackageNames(): Promise<Set<string>> {
+  if (publicMonorepoPackageNames !== null) {
+    return publicMonorepoPackageNames
+  }
+  const packagesDir = path.join(__dirname, '..', '..', '..', 'packages')
+  const names = new Set<string>()
+  for (const entry of await fs.readdir(packagesDir)) {
+    try {
+      const manifest = JSON.parse(
+        await fs.readFile(path.join(packagesDir, entry, 'package.json'), 'utf8')
+      )
+      if (typeof manifest.name === 'string' && manifest.private !== true) {
+        names.add(manifest.name)
+      }
+    } catch {
+      // Not a package directory (e.g. no package.json), skip.
+    }
+  }
+  publicMonorepoPackageNames = names
+  return names
+}
+
 export class NextInstance {
   protected files: ResolvedFileConfig
   protected overrideFiles: ResolvedFileConfig
@@ -283,6 +309,36 @@ export class NextInstance {
         ) {
           finalDependencies['babel-plugin-react-compiler'] =
             '0.0.0-experimental-3fde738-20250918'
+        }
+
+        // Deploy tests install `next` from the preview build of the tested
+        // commit via NEXT_TEST_VERSION (e.g.
+        // `https://vercel-packages.vercel.app/next/commits/<sha>/next`).
+        // Dependencies on other packages of this repo that use the `canary`
+        // dist-tag must resolve to the same preview build: the published
+        // canary would not contain the changes under test, and its
+        // `peerDependencies` ranges (e.g. `^16.0.0-beta.0`) reject prerelease
+        // preview versions such as `16.4.0-preview-<sha>-<date>`, failing
+        // `npm install` with ERESOLVE. The preview tarballs rewrite their
+        // monorepo (peer) dependencies to the preview URLs of the same
+        // commit, so installing them keeps the deployment consistent.
+        const previewBuildsCommitBaseUrl = process.env.NEXT_TEST_VERSION?.match(
+          /^(.+\/commits\/[^/]+)\/next$/
+        )?.[1]
+        if (previewBuildsCommitBaseUrl) {
+          const packageNames = await getPublicMonorepoPackageNames()
+          for (const dependencyName of Object.keys(finalDependencies)) {
+            if (
+              finalDependencies[dependencyName] === 'canary' &&
+              packageNames.has(dependencyName)
+            ) {
+              const previewBuildUrl = `${previewBuildsCommitBaseUrl}/${dependencyName}`
+              require('console').log(
+                `Resolving ${dependencyName}@canary to the preview build: ${previewBuildUrl}`
+              )
+              finalDependencies[dependencyName] = previewBuildUrl
+            }
+          }
         }
 
         if (skipInstall || skipIsolatedNext) {
