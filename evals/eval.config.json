@@ -3,11 +3,15 @@
     "skills": ["next-partial-prefetching-adoption"],
     "timeout": 1800
   },
-  "agent-047-adopt-cache-components": {
+  "agent-047-cache-components-incremental-first-pr": {
     "skills": ["next-cache-components-adoption"],
     "timeout": 1800
   },
   "agent-054-cache-components-empty-static-params": {
+    "skills": ["next-cache-components-adoption"],
+    "timeout": 1800
+  },
+  "agent-056-cache-components-incremental-completion": {
     "skills": ["next-cache-components-adoption"],
     "timeout": 1800
   }
