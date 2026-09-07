@@ -100,6 +100,21 @@ describeTurbopack('turbopack module federation with a webpack remote', () => {
       expect(await browser.elementByCss('#default-shared-message').text()).toBe(
         'default shared fallback'
       )
+      expect(await browser.elementByCss('#union-range').text()).toBe(
+        'range v1.5.0'
+      )
+      expect(await browser.elementByCss('#hyphen-range').text()).toBe(
+        'range v2.3.0'
+      )
+      expect(await browser.elementByCss('#caret-range').text()).toBe(
+        'range v1.5.0'
+      )
+      expect(await browser.elementByCss('#prefix-fallback').text()).toBe(
+        'prefix fallback sharing'
+      )
+      expect(await browser.elementByCss('#eager-value').text()).toBe(
+        'eager local sharing'
+      )
     })
   })
 })
