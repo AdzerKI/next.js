@@ -137,7 +137,29 @@ impl ModuleResolveResultItem {
 #[derive(Clone, Debug, Hash, Default, Serialize, Deserialize)]
 pub struct BindingUsage {
     pub import: ImportUsage,
-    pub export: ExportUsage,
+    pub export: TargetExportUsage,
+}
+
+/// Defines how a reference contributes used exports to its target module.
+#[turbo_tasks::value(shared)]
+#[derive(Debug, Clone, Hash, Serialize, Deserialize)]
+pub enum TargetExportUsage {
+    /// The reference always uses this fixed set of target exports.
+    Fixed(ExportUsage),
+    /// The reference forwards its parent module's used exports to the target.
+    Forwarded,
+}
+
+impl Default for TargetExportUsage {
+    fn default() -> Self {
+        Self::Fixed(ExportUsage::All)
+    }
+}
+
+impl From<ExportUsage> for TargetExportUsage {
+    fn from(usage: ExportUsage) -> Self {
+        Self::Fixed(usage)
+    }
 }
 
 #[turbo_tasks::value_impl]
