@@ -1,4 +1,4 @@
-;!function(){try { var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof global?global:"undefined"!=typeof window?window:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&((e._debugIds|| (e._debugIds={}))[n]="c4bcd784-d0da-6504-30a3-b80f0a855f3a")}catch(e){}}();
+;!function(){try { var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof global?global:"undefined"!=typeof window?window:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&((e._debugIds|| (e._debugIds={}))[n]="7f0ab0bf-032f-83cf-36bd-a7ca6cb2a1d3")}catch(e){}}();
 (globalThis["TURBOPACK"] || (globalThis["TURBOPACK"] = [])).push([
     "output/0rv8_turbopack-tests_tests_snapshot_debug-ids_browser_input_index_0bjegbrfzt05o.js",
     {"otherChunks":["output/0_9x_turbopack-tests_tests_snapshot_debug-ids_browser_input_index_03ibyvsq4xsbk.js"],"runtimeModuleIds":["[project]/turbopack/crates/turbopack-tests/tests/snapshot/debug-ids/browser/input/index.js [test] (ecmascript)"]}
@@ -827,7 +827,7 @@ function loadScriptByUrl(url) {
     if (promise !== undefined) return promise;
     promise = new Promise((resolve, reject)=>{
         if (typeof document === 'undefined') {
-            reject(new Error(`Cannot load external script ${url} without a document`));
+            reject(new Error(`Cannot load external script ${url} without a document. Module Federation remote imports must run in browser client code.`));
             return;
         }
         const script = document.createElement('script');
@@ -2516,5 +2516,5 @@ chunkListsToRegister.forEach(registerChunkList);
 })();
 
 
-//# debugId=c4bcd784-d0da-6504-30a3-b80f0a855f3a
+//# debugId=7f0ab0bf-032f-83cf-36bd-a7ca6cb2a1d3
 //# sourceMappingURL=0_9x_turbopack-tests_tests_snapshot_debug-ids_browser_input_index_0bjegbrfzt05o.js.map

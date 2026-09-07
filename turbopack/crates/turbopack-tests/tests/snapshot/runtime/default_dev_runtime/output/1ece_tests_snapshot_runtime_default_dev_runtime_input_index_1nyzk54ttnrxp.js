@@ -826,7 +826,7 @@ function loadScriptByUrl(url) {
     if (promise !== undefined) return promise;
     promise = new Promise((resolve, reject)=>{
         if (typeof document === 'undefined') {
-            reject(new Error(`Cannot load external script ${url} without a document`));
+            reject(new Error(`Cannot load external script ${url} without a document. Module Federation remote imports must run in browser client code.`));
             return;
         }
         const script = document.createElement('script');

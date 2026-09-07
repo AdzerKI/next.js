@@ -704,10 +704,14 @@ function loadChunkAsyncByUrl(chunkUrl) {
     return loadChunkAsync.call(this, path1);
 }
 contextPrototype.L = loadChunkAsyncByUrl;
+const externalScriptCache = new Map();
 function loadScriptByUrl(url) {
+    let promise = externalScriptCache.get(url);
+    if (promise !== undefined) return promise;
     const loader = globalThis.__turbopack_test_load_script__;
-    if (loader !== undefined) return loader(url);
-    return Promise.reject(new Error(`External script loading is only supported in browser runtimes: ${url}`));
+    promise = loader !== undefined ? loader(url) : Promise.reject(new Error(`External script loading is only supported in browser client code. Module Federation remote imports cannot run on the server: ${url}`));
+    externalScriptCache.set(url, promise);
+    return promise;
 }
 contextPrototype.o = loadScriptByUrl;
 // Shared runtime primitive: the root that on-disk chunk paths are resolved
