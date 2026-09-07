@@ -1,4 +1,4 @@
-;!function(){try { var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof global?global:"undefined"!=typeof window?window:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&((e._debugIds|| (e._debugIds={}))[n]="12f266ee-75d9-1045-e68c-4b9b82631749")}catch(e){}}();
+;!function(){try { var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof global?global:"undefined"!=typeof window?window:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&((e._debugIds|| (e._debugIds={}))[n]="c4bcd784-d0da-6504-30a3-b80f0a855f3a")}catch(e){}}();
 (globalThis["TURBOPACK"] || (globalThis["TURBOPACK"] = [])).push([
     "output/0rv8_turbopack-tests_tests_snapshot_debug-ids_browser_input_index_0bjegbrfzt05o.js",
     {"otherChunks":["output/0_9x_turbopack-tests_tests_snapshot_debug-ids_browser_input_index_03ibyvsq4xsbk.js"],"runtimeModuleIds":["[project]/turbopack/crates/turbopack-tests/tests/snapshot/debug-ids/browser/input/index.js [test] (ecmascript)"]}
@@ -691,7 +691,8 @@ contextPrototype.a = asyncModule;
 /// <reference path="../../../shared/runtime/runtime-utils.ts" />
 // Used in WebWorkers to tell the runtime about the chunk suffix
 const browserContextPrototype = Context.prototype;
-const RUNTIME_CHUNK_BASE_PATH = typeof TURBOPACK_CHUNK_BASE_PATH === 'string' ? TURBOPACK_CHUNK_BASE_PATH : CHUNK_BASE_PATH;
+const MODULE_FEDERATION_CHUNK_BASE_PREFIX = '__turbopack_module_federation__:';
+const RUNTIME_CHUNK_BASE_PATH = typeof TURBOPACK_CHUNK_BASE_PATH === 'string' ? TURBOPACK_CHUNK_BASE_PATH : CHUNK_BASE_PATH.startsWith(MODULE_FEDERATION_CHUNK_BASE_PREFIX) && typeof document !== 'undefined' && document.currentScript?.src ? new URL('../'.repeat(Number(CHUNK_BASE_PATH.slice(MODULE_FEDERATION_CHUNK_BASE_PREFIX.length))), document.currentScript.src).href : CHUNK_BASE_PATH;
 const moduleFactories = new Map();
 contextPrototype.M = moduleFactories;
 const availableModules = new Map();
@@ -2515,5 +2516,5 @@ chunkListsToRegister.forEach(registerChunkList);
 })();
 
 
-//# debugId=12f266ee-75d9-1045-e68c-4b9b82631749
+//# debugId=c4bcd784-d0da-6504-30a3-b80f0a855f3a
 //# sourceMappingURL=0_9x_turbopack-tests_tests_snapshot_debug-ids_browser_input_index_0bjegbrfzt05o.js.map
