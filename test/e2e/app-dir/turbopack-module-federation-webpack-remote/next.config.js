@@ -32,6 +32,7 @@ const nextConfig = {
           version: '1.0.0',
           requiredVersion: '^1.0.0',
         },
+        'default-shared': {},
       },
     },
   },

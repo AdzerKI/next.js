@@ -434,9 +434,21 @@ pub fn apply_module_federation_import_map(
         let fallback_request: RcStr =
             format!("__turbopack_module_federation_shared_fallback__/{index}").into();
         if let Some(import) = &shared.import {
+            // A webpack-style shared entry defaults `import` to its request (for example
+            // `shared: ['react']`). Resolving that bare request through this import map would
+            // match the shared alias again and make the fallback proxy import itself. Resolve the
+            // default local package through its node_modules path instead.
+            let import = if import == &shared.request
+                && !import.starts_with('.')
+                && !import.starts_with('/')
+            {
+                format!("./node_modules/{import}").into()
+            } else {
+                import.clone()
+            };
             import_map.insert_exact_alias(
                 fallback_request.clone(),
-                ImportMapping::PrimaryAlternative(import.clone(), Some(project_path.clone()))
+                ImportMapping::PrimaryAlternative(import, Some(project_path.clone()))
                     .resolved_cell(),
             );
         }

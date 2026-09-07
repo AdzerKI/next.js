@@ -8,12 +8,16 @@ export function RemoteMessage() {
   const [remoteShared, setRemoteShared] = useState('loading')
   const [strictError, setStrictError] = useState('loading')
   const [fallback, setFallback] = useState('loading')
+  const [defaultShared, setDefaultShared] = useState('loading')
 
   useEffect(() => {
     async function load() {
       // @ts-expect-error -- configured with a local fallback at runtime
       const fallbackModule = await import('local-fallback')
       setFallback(fallbackModule.value)
+      // @ts-expect-error -- import defaults to the package request at runtime
+      const defaultSharedModule = await import('default-shared')
+      setDefaultShared(defaultSharedModule.value)
       // @ts-expect-error -- provided by Module Federation at runtime
       const remote = await import('catalog/message')
       setMessage(remote.message)
@@ -38,6 +42,7 @@ export function RemoteMessage() {
       <p id="remote-shared-message">{remoteShared}</p>
       <p id="strict-error">{strictError}</p>
       <p id="fallback-message">{fallback}</p>
+      <p id="default-shared-message">{defaultShared}</p>
     </>
   )
 }

@@ -97,6 +97,9 @@ describeTurbopack('turbopack module federation with a webpack remote', () => {
       expect(await browser.elementByCss('#fallback-message').text()).toBe(
         'local fallback sharing'
       )
+      expect(await browser.elementByCss('#default-shared-message').text()).toBe(
+        'default shared fallback'
+      )
     })
   })
 })
