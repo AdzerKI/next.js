@@ -1004,6 +1004,7 @@ export function createAppPageEntrypoint({
             previewProps,
             enableTainting: nextConfig.experimental.taint,
             reactMaxHeadersLength: nextConfig.reactMaxHeadersLength,
+            progressiveChunkSize: nextConfig.experimental.progressiveChunkSize,
 
             multiZoneDraftMode,
             prefetchHints: prefetchHintsManifest,

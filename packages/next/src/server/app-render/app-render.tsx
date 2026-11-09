@@ -3572,6 +3572,7 @@ async function renderToStream(
     isBuildTimePrerendering = false,
     onInstrumentationRequestError,
     page,
+    progressiveChunkSize,
     reactMaxHeadersLength,
     setReactDebugChannel,
     subresourceIntegrityManifest,
@@ -4240,6 +4241,7 @@ async function renderToStream(
             }
           },
           maxHeadersLength: reactMaxHeadersLength,
+          progressiveChunkSize,
           bootstrapScriptContent,
           bootstrapScripts: [bootstrapScript],
           unstable_externalRuntimeSrc: externalRuntimeSrc,
@@ -4385,6 +4387,7 @@ async function renderToStream(
             })
           },
           maxHeadersLength: reactMaxHeadersLength,
+          progressiveChunkSize,
           bootstrapScriptContent,
           bootstrapScripts: [bootstrapScript],
           unstable_externalRuntimeSrc: externalRuntimeSrc,
@@ -9030,6 +9033,7 @@ async function prerenderToStream(
     isBuildTimePrerendering = false,
     onInstrumentationRequestError,
     page,
+    progressiveChunkSize,
     reactMaxHeadersLength,
     subresourceIntegrityManifest,
     cacheComponents,
@@ -10097,6 +10101,7 @@ async function prerenderToStream(
                 },
                 onHeaders: finalClientOnHeaders,
                 maxHeadersLength: reactMaxHeadersLength,
+                progressiveChunkSize,
                 bootstrapScriptContent,
                 bootstrapScripts: [bootstrapScript],
                 unstable_externalRuntimeSrc: externalRuntimeSrc,
@@ -10373,6 +10378,7 @@ async function prerenderToStream(
         {
           onError: htmlRendererErrorHandler,
           nonce,
+          progressiveChunkSize,
           // Without Cache Components the prerender is a complete document
           // that's never resumed, so the Turbopack bootstrap stays inline.
           bootstrapScriptContent: turbopackBootstrapScriptContent

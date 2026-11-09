@@ -226,6 +226,12 @@ export interface RenderOptsPartial {
   reactMaxHeadersLength: number | undefined
 
   /**
+   * The number of bytes after which React outlines a completed Suspense
+   * boundary from the document flow.
+   */
+  progressiveChunkSize: number | undefined
+
+  /**
    * Per-route prefetch hints from prefetch-hints.json.
    * Loaded at server startup from the build output.
    */

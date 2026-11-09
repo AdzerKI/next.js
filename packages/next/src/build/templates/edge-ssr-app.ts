@@ -179,6 +179,7 @@ async function requestHandler(
       previewProps: previewProps,
       enableTainting: nextConfig.experimental.taint,
       reactMaxHeadersLength: nextConfig.reactMaxHeadersLength,
+      progressiveChunkSize: nextConfig.experimental.progressiveChunkSize,
 
       multiZoneDraftMode: false,
       cacheLifeProfiles: nextConfig.cacheLife,

@@ -425,6 +425,7 @@ export const experimentalSchema = {
     ])
     .optional(),
   goRoutes: z.boolean().optional(),
+  progressiveChunkSize: z.number().int().positive().optional(),
   turbopackFileSystemCacheForDev: z.boolean().optional(),
   turbopackFileSystemCacheForBuild: z.boolean().optional(),
   turbopackSeedCacheFromWorktree: z.boolean().optional(),

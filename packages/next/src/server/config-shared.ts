@@ -1555,6 +1555,14 @@ export interface ExperimentalConfig {
   useCache?: boolean
 
   /**
+   * The number of bytes React writes before it outlines a completed Suspense
+   * boundary from the document flow into a hidden element and a reveal script.
+   * Raise it to keep completed content in place at the first paint.
+   * @default 12800
+   */
+  progressiveChunkSize?: number
+
+  /**
    * Enables durable `"use cache"` remote cache entries across deployments. Only implemented for
    * Turbopack.
    */
